@@ -1,0 +1,20 @@
+# data & outputs, logs & test
+data/*
+output_data/*
+reports/*
+test/*
+logs/*
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# environment
+venv/
+.venv/
+
+# os
+*.DS_Store
