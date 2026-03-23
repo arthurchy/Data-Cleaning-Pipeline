@@ -10,7 +10,6 @@ A reusable pipeline for cleaning, standardising, and profiling messy CSV data. O
 data_cleaning_engine/
 │
 ├── main.py                   # entry point
-├── config.py                 # default paths and settings
 │
 ├── app/
 │   ├── pipeline.py           # orchestrates the cleaning steps
@@ -32,13 +31,14 @@ data_cleaning_engine/
 │   │   └── data_io.py
 │   │
 │   └── utils/
-│       ├── config.py
+│       ├── config.py         # default paths and filenames
 │       └── logger.py
 │
-├── data/                     # place your input CSV here 
-├── reports/                  # JSON and Excel reports output here 
-├── output_data/              # cleaned CSV output here 
-├── test/
+├── data/                     # place your input CSV here
+├── reports/                  # JSON and Excel reports output here
+├── output_data/              # cleaned CSV output here
+├── logs/                     # log files output here
+├── tests/
 ├── requirements.txt
 └── README.md
 ```
@@ -57,7 +57,7 @@ pip install -r requirements.txt
 
 ### Default run
 
-Uses the paths and settings defined in `config.py`:
+Uses the paths and filenames defined in `app/utils/config.py`:
 
 ```bash
 python main.py
@@ -68,34 +68,34 @@ python main.py
 All arguments are optional. Any argument not provided falls back to the value in `config.py`.
 
 ```bash
-python main.py [--input PATH] [--reports PATH] [--output PATH] [--date_format FORMAT]
+python main.py [--input FILENAME] [--output FILENAME] [--report NAME] [--date-format FORMAT]
 ```
 
 | Argument | Description | Default |
 |---|---|---|
-| `--input` | Path to input CSV file | `data/messy_sales.csv` |
-| `--reports` | Directory for JSON and Excel reports | `reports/` |
-| `--output` | Directory for cleaned CSV output | `output_data/` |
+| `--input` | Input CSV filename (inside `data/`) | `test.csv` |
+| `--output` | Output CSV filename (inside `output_data/`) | `clean.csv` |
+| `--report` | Report name without extension (inside `reports/`) | `summary` |
 | `--date-format` | Expected date format in the CSV | `%Y-%m-%d` |
 
 **Examples:**
 
 ```bash
 # Run on a different file
-python main.py --data data/q1_orders.csv
+python main.py --input q1_orders.csv
 
 # Run with a different date format
-python main.py --data data/eu_sales.csv --date-format "%d/%m/%Y"
+python main.py --input eu_sales.csv --date-format "%d/%m/%Y"
 
 # Override all settings
-python main.py --data data/q1_orders.csv --reports results/ --output clean/ --date-format "%d/%m/%Y"
+python main.py --input q1_orders.csv --output q1_clean.csv --report q1_summary --date-format "%d/%m/%Y"
 ```
 
 ---
 
 ## Pipeline Steps
 
-1. **Load** — reads CSV, validates file type
+1. **Load** — reads CSV from `data/`, validates file type
 2. **Normalise column names** — strips whitespace, lowercases, replaces spaces with underscores
 3. **Normalise strings** — strips whitespace, standardises null-like values (`na`, `none`, `?` etc.) to `NaN`
 4. **Detect types** — infers column types: `numeric`, `datetime`, `boolean`, `string`, `unknown`
@@ -107,23 +107,32 @@ python main.py --data data/q1_orders.csv --reports results/ --output clean/ --da
 
 ## Outputs
 
+For a run with `--report q1_summary` and `--output q1_clean.csv`:
+
 | File | Location | Description |
 |---|---|---|
-| `clean.csv` | `output_data/` | Cleaned and standardised dataset |
-| `summary.json` | `reports/` | Full statistics summary |
-| `summary.xlsx` | `reports/` | Formatted Excel report with dataset overview and column profiles |
+| `q1_clean.csv` | `output_data/` | Cleaned and standardised dataset |
+| `q1_summary.json` | `reports/` | Full statistics summary |
+| `q1_summary.xlsx` | `reports/` | Formatted Excel report with dataset overview and column profiles |
+
+The report name (e.g. `q1_summary`) is shared by both the `.json` and `.xlsx` outputs.
 
 ---
 
 ## Configuration
 
-Default settings live in `config.py`:
+Default settings live in `app/utils/config.py`:
 
 ```python
-DATA_PATH   = "data/messy_sales.csv"
-REPORT_PATH = "reports/"
-OUTPUT_PATH = "output_data/"
-DATE_FORMAT = "%Y-%m-%d"
+DATA_PATH    = "data/"
+REPORT_PATH  = "reports/"
+OUTPUT_PATH  = "output_data/"
+
+INPUT_NAME   = "test.csv"
+OUTPUT_NAME  = "clean.csv"
+REPORT_NAME  = "summary"     # shared name for .json and .xlsx outputs
+
+DATE_FORMAT  = "%Y-%m-%d"
 ```
 
 Edit this file to change the defaults without using CLI arguments.
