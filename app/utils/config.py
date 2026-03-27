@@ -7,6 +7,6 @@ INPUT_NAME   = "test.csv"
 OUTPUT_NAME  = "clean.csv"
 REPORT_NAME  = "summary"
 
-DATE_FORMAT = "%Y-%m-%d"
+DATE_FORMAT = None
 
 

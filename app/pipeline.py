@@ -12,7 +12,7 @@ from app.utils.logger import get_logger
 
 logger = get_logger(__name__)   
 
-def run_pipeline(df: pd.DataFrame, date_format: str) -> tuple[pd.DataFrame, dict]:
+def run_pipeline(df: pd.DataFrame, date_format: str = None) -> tuple[pd.DataFrame, dict]:
     """Construct the data cleaning pipeline"""
     logger.info("Start data cleaning pipeline")
     df = df.copy()
