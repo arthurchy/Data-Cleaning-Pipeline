@@ -4,6 +4,8 @@ from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+DECIMAL_PLACES = 4
+
 def generate_summary(pre_drop_df: pd.DataFrame, df: pd.DataFrame) -> dict:
     """
     create the summary dictionary for the dataframe
@@ -31,18 +33,18 @@ def generate_summary(pre_drop_df: pd.DataFrame, df: pd.DataFrame) -> dict:
         col_summary = {
             "dtype": str(col_data.dtype),
             "missing_count": int(col_data.isna().sum()),
-            "missing_pct": float(col_data.isna().mean()),
+            "missing_pct": round(float(col_data.isna().mean()), DECIMAL_PLACES),
             "unique_count": int(col_data.nunique()),
             "memory": int(col_data.memory_usage(deep = True))
         }
 
         if pd.api.types.is_numeric_dtype(col_data):
             col_summary.update({
-                "min": float(col_data.min()),
-                "max": float(col_data.max()),
-                "mean": float(col_data.mean()),
-                "median": float(col_data.median()),
-                "std_dev": float(col_data.std())
+                "min": round(float(col_data.min()), DECIMAL_PLACES),
+                "max": round(float(col_data.max()), DECIMAL_PLACES),
+                "mean": round(float(col_data.mean()), DECIMAL_PLACES),
+                "median": round(float(col_data.median()), DECIMAL_PLACES),
+                "std_dev": round(float(col_data.std()), DECIMAL_PLACES)
             })
         
         if pd.api.types.is_string_dtype(col_data):
