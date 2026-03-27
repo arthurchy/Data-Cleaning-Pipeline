@@ -18,6 +18,9 @@ NULL_WORDS = {
     "?"
 }
 
+TRUE_LIST = {"true", "yes", "1", "y", "on", "t"}
+FALSE_LIST = {"false", "no", "0", "n", "off", "f"}
+
 def clean_column_names(col: str) -> str:
     """Clean column names"""
     col = col.strip().lower()
@@ -46,7 +49,7 @@ def normalise_column_names(df: pd.DataFrame) -> pd.DataFrame:
 
 def normalise_string(series: pd.Series) -> pd.Series:
     """
-    Normalise string object by vectorise operation
+    Normalise string object by vectorise operation (space stripping, normalise null values)
 
     Parameters:
         series: a column pd.series 
@@ -61,7 +64,7 @@ def normalise_string(series: pd.Series) -> pd.Series:
     series = series.astype("string").str.strip()
 
     mask = series.str.lower().isin(NULL_WORDS)
-    series = series.where(~mask, other=pd.NA)
+    series = series.where(~mask, other = pd.NA)
 
     return series
 
@@ -80,7 +83,7 @@ def normalise_df(df: pd.DataFrame) -> pd.DataFrame:
         df[col] = normalise_string(df[col])
     return df
 
-def standardise_date(series: pd.Series, date_format=None) -> pd.Series:
+def standardise_date(series: pd.Series, date_format = None) -> pd.Series:
     """
     Convert to pandas datetime varible
 
@@ -91,8 +94,11 @@ def standardise_date(series: pd.Series, date_format=None) -> pd.Series:
     Returns:
         datetime column
     """
+    if isinstance(series.dtype, pd.DatetimeTZDtype):
+        return series
+    
     before_na = series.isna()
-    series = pd.to_datetime(series, format=date_format, errors="coerce", utc=True)
+    series = pd.to_datetime(series, format = date_format, errors="coerce", utc = True)
     after_na = (~before_na) & series.isna()
 
     if after_na.any():
@@ -149,19 +155,19 @@ def standardise_boolean(series: pd.Series) -> pd.Series:
     Returns:
         boolean column
     """   
+    if str(series.dtype) == "boolean":
+        return series
+
     series = series.astype(str).str.strip().str.lower()
 
-    true_list = {"true", "yes", "1", "y", "on", "t"}
-    false_list = {"false", "no", "0", "n", "off", "f"}
-
-    result = pd.Series(pd.NA, index=series.index, dtype="boolean")
-    result[series.isin(true_list)] = True
-    result[series.isin(false_list)] = False
+    result = pd.Series(pd.NA, index = series.index, dtype="boolean")
+    result[series.isin(TRUE_LIST)] = True
+    result[series.isin(FALSE_LIST)] = False
 
     return result
 
     
-def standardise_data(df: pd.DataFrame, column_types: dict, date_format: str) -> pd.DataFrame:
+def standardise_data(df: pd.DataFrame, column_types: dict, date_format: str = None) -> pd.DataFrame:
     """
     Process the whole dataframe according to the data type
 

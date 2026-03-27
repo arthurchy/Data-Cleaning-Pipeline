@@ -7,6 +7,9 @@ logger = get_logger(__name__)
 
 TYPE_THRESHOLD = 0.9
 
+TRUE_LIST = {"true", "yes", "1", "y", "on", "t"}
+FALSE_LIST = {"false", "no", "0", "n", "off", "f"}
+
 def attempt_numeric_convert(series: pd.Series) -> pd.Series:
     """convert string to numeric"""
     series = series.astype(str)
@@ -40,6 +43,9 @@ def detect_column_type(column: pd.Series) -> str:
     if num_ratio > TYPE_THRESHOLD:
         return "numeric"
     
+    if isinstance(non_null.dtype, pd.DatetimeTZDtype):
+        return "datetime"
+
     # try to convert to datetime
     with warnings.catch_warnings(action="ignore"):
         date_cov = pd.to_datetime(non_null, errors = "coerce")
@@ -48,8 +54,11 @@ def detect_column_type(column: pd.Series) -> str:
     if date_ratio > TYPE_THRESHOLD:
         return "datetime"
     
+    if str(non_null.dtype) == "boolean":
+        return "boolean"
+    
     unique_vals = set(non_null.astype(str).str.lower().unique())
-    if unique_vals.issubset({"true", "false", "yes", "no", "0", "1", "on", "off", "y", "n"}):
+    if unique_vals.issubset(TRUE_LIST | FALSE_LIST):
         return "boolean"
     
     return "string"
