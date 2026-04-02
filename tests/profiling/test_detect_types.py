@@ -77,4 +77,30 @@ def test_detect_types_empty():
     assert result["order_id"] == "unknown"
     assert result["amount"]   == "unknown"
 
+def test_does_not_misclassify_date_as_numeric():
+    df = pd.DataFrame({
+        "date_added": ["9/25/2021", "9/24/2021", "9/22/2021"]
+        })
+    result = detect_types(df)
+    assert result["date_added"] == "datetime"
 
+def test_does_not_misclassify_numeric_string_mixture_as_numeric():
+    df = pd.DataFrame({
+        "duration": ["90 min", "1 Season", "91 min", "2 Seasons"]
+        })
+    result = detect_types(df)
+    assert result["duration"] == "string"
+
+def test_does_not_misclassify_id_as_numeric():
+    df = pd.DataFrame({
+        "show_id": ["s1", "s3", "s6", "s14"]
+        })
+    result = detect_types(df)
+    assert result["show_id"] == "string"
+
+def test_does_not_misclassify_year_as_datetime():
+    df = pd.DataFrame({
+        "year": ["1990", "2000", "2010", "2020"] # intended to be numeric 
+        })
+    result = detect_types(df)
+    assert result["year"] == "numeric"
