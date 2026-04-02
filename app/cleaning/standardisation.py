@@ -3,6 +3,8 @@ import pandas as pd
 import re
 
 from app.utils.logger import get_logger
+from app.utils.cleaning_log import CleaningLog
+
 logger = get_logger(__name__)
 
 NULL_WORDS = {
@@ -56,7 +58,7 @@ def normalise_column_names(df: pd.DataFrame) -> pd.DataFrame:
         raise ValueError(f"Duplicate colum names after normalisation: {duplicates}")
     return df
 
-def normalise_string(series: pd.Series) -> pd.Series:
+def normalise_string(series: pd.Series, cleaning_log: CleaningLog = None) -> pd.Series:
     """
     Normalise string object by vectorise operation (space stripping, normalise null values)
 
@@ -73,11 +75,20 @@ def normalise_string(series: pd.Series) -> pd.Series:
     series = series.astype("string").str.strip()
 
     mask = series.str.lower().isin(NULL_WORDS)
+    if cleaning_log and mask.any():
+        for val, count in series[mask].value_counts().items():
+            cleaning_log.log(
+                column = series.name,
+                change_type = "null_word_replaced",
+                detail = f'"{val}" → NaN',
+                count = int(count)
+            )
+
     series = series.where(~mask, other = pd.NA)
 
     return series
 
-def normalise_df(df: pd.DataFrame) -> pd.DataFrame:
+def normalise_df(df: pd.DataFrame, cleaning_log: CleaningLog = None) -> pd.DataFrame:
     """
     Function to normalise entire dataframe
 
@@ -89,10 +100,10 @@ def normalise_df(df: pd.DataFrame) -> pd.DataFrame:
     """
     df = df.copy()
     for col in df.columns:
-        df[col] = normalise_string(df[col])
+        df[col] = normalise_string(df[col], cleaning_log)
     return df
 
-def standardise_date(series: pd.Series, date_format = None) -> pd.Series:
+def standardise_date(series: pd.Series, date_format = None, cleaning_log: CleaningLog = None) -> pd.Series:
     """
     Convert to pandas datetime varible
 
@@ -112,6 +123,14 @@ def standardise_date(series: pd.Series, date_format = None) -> pd.Series:
 
     if after_na.any():
         logger.warning(f"Failed to parse {after_na.sum()} items to datetime")
+        if cleaning_log:
+            cleaning_log.log(
+                column = series.name,
+                change_type = "datetime_parse_failed",
+                detail = f"coerced to NaT",
+                count = int(after_na.sum())
+            )
+    
     return series
 
 def keep_one_decimal(num: str) -> str:
@@ -121,7 +140,7 @@ def keep_one_decimal(num: str) -> str:
         return num_parts[0] + "." + "".join(num_parts[1:])
     return num
 
-def clean_numeric_series(series: pd.Series) -> pd.Series:
+def clean_numeric_series(series: pd.Series, cleaning_log: CleaningLog = None) -> pd.Series:
     """
     clean numeric string and convert column object to numeric
 
@@ -144,15 +163,21 @@ def clean_numeric_series(series: pd.Series) -> pd.Series:
 
     if after_na.any():
         logger.warning(f"Failed to parse {after_na.sum()} items to numeric")
-
+        if cleaning_log:
+            cleaning_log.log(
+                column = series.name,
+                change_type = "numeric_parse_failed",
+                detail = "coerced to NaN",
+                count = int(after_na.sum())
+            )
     return series
 
-def standardise_numeric(series: pd.Series) -> pd.Series:
+def standardise_numeric(series: pd.Series, cleaning_log: CleaningLog = None) -> pd.Series:
     """convert numeric string column to numeric"""
     if pd.api.types.is_numeric_dtype(series):
         return series
 
-    return clean_numeric_series(series)
+    return clean_numeric_series(series, cleaning_log)
 
 def standardise_boolean(series: pd.Series) -> pd.Series:
     """
@@ -176,7 +201,7 @@ def standardise_boolean(series: pd.Series) -> pd.Series:
     return result
 
     
-def standardise_data(df: pd.DataFrame, column_types: dict, date_format: str = None) -> pd.DataFrame:
+def standardise_data(df: pd.DataFrame, column_types: dict, date_format: str = None, cleaning_log: CleaningLog = None) -> pd.DataFrame:
     """
     Process the whole dataframe according to the data type
 
@@ -197,10 +222,10 @@ def standardise_data(df: pd.DataFrame, column_types: dict, date_format: str = No
             continue
 
         if col_type == "numeric":
-            df[col] = standardise_numeric(df[col])
+            df[col] = standardise_numeric(df[col], cleaning_log)
 
         elif col_type == "datetime":
-            df[col] = standardise_date(df[col], date_format)
+            df[col] = standardise_date(df[col], date_format, cleaning_log)
 
         elif col_type == "boolean":
             df[col] = standardise_boolean(df[col])

@@ -35,6 +35,9 @@ def create_worksheet(summary: dict, output_path: str, filename: str) -> None:
     ws2 = wb.create_sheet("Column Profiles") 
     write_col_data(ws2, summary)
 
+    ws3 = wb.create_sheet("Cleaning Log")
+    write_cleaning_log(ws3, summary)
+    
     os.makedirs(output_path, exist_ok=True)  
     full_path = os.path.join(output_path, filename)
 
@@ -144,6 +147,25 @@ def write_col_data(ws, summary: dict) -> None:
     
     ws.freeze_panes = "B2"
     
+def write_cleaning_log(ws, summary: dict) -> None:
+    cleaning_log = summary.get("cleaning_log", [])
+    if not cleaning_log:
+        logger.warning("Cleaning log is empty")
+        return
+
+    HEADERS = ["Column", "Change Type", "Detail", "Count"]
+    for col_idx, label in enumerate(HEADERS, start = 1):
+        write_header(ws.cell(1, col_idx), label)
+        ws.column_dimensions[get_column_letter(col_idx)].width = 30
+
+    for row_idx, entry in enumerate(cleaning_log, start = 2):
+        write_cell(ws.cell(row_idx, 1), entry["column"])
+        write_cell(ws.cell(row_idx, 2), entry["change_type"])
+        write_cell(ws.cell(row_idx, 3), entry["detail"])
+        write_cell(ws.cell(row_idx, 4), entry["count"])
+
+    ws.freeze_panes = "A2"
+
 
     
 
