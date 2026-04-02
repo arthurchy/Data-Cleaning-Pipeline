@@ -151,11 +151,14 @@ def clean_numeric_series(series: pd.Series, cleaning_log: CleaningLog = None) ->
         numeric column
     """    
     before_na = series.isna()
-    series = series.astype(str).str.strip()
-    series = series.str.replace(r"\((.*?)\)", r"-\1", regex=True)
-    series = series.str.replace(r"[^\d\.\-eE+]", "", regex=True)
+    mask = series.notna()
+    cleaned = series[mask].astype(str).str.strip()
+    cleaned = cleaned.str.replace(r"\((.*?)\)", r"-\1", regex=True)
+    cleaned = cleaned.str.replace(r"[^\d\.\-eE+]", "", regex=True)
+    cleaned = cleaned.apply(keep_one_decimal)
 
-    series = series.apply(keep_one_decimal)
+    series = series.copy()
+    series[mask] = cleaned
 
     series = pd.to_numeric(series, errors="coerce")
 
