@@ -14,8 +14,17 @@ NULL_WORDS = {
     "nan",
     "-",
     "nil",
-    "unknown",
-    "?"
+    "?",
+    "not given",
+    "not available",
+    "not specified",
+    "unspecified",
+    "undefined",
+    "missing",
+    "tbd",
+    "tba",
+    "not listed",
+    "unknown"
 }
 
 TRUE_LIST = {"true", "yes", "1", "y", "on", "t"}
