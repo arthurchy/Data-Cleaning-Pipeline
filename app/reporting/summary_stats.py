@@ -53,8 +53,12 @@ def generate_summary(pre_drop_df: pd.DataFrame, df: pd.DataFrame) -> dict:
                 })
         
         if str(col_data.dtype) == "boolean":
+            dist = col_data.value_counts()
+
+            dist = {bool(k) if pd.notna(k) else None: int(v) for k, v in dist.items()}
+
             col_summary.update({
-                "Distribution": col_data.value_counts().to_dict()
+                "Distribution": dist
             })
 
         if isinstance(col_data.dtype, pd.DatetimeTZDtype):
