@@ -182,7 +182,7 @@ def standardise_numeric(series: pd.Series, cleaning_log: CleaningLog = None) -> 
 
     return clean_numeric_series(series, cleaning_log)
 
-def standardise_boolean(series: pd.Series) -> pd.Series:
+def standardise_boolean(series: pd.Series, cleaning_log: CleaningLog = None) -> pd.Series:
     """
     convert bool string to True/False
 
@@ -200,6 +200,23 @@ def standardise_boolean(series: pd.Series) -> pd.Series:
     result = pd.Series(pd.NA, index = series.index, dtype="boolean")
     result[series.isin(TRUE_LIST)] = True
     result[series.isin(FALSE_LIST)] = False
+
+    if cleaning_log and series.isin(TRUE_LIST).any():
+        for val, count in series[series.isin(TRUE_LIST)].value_counts().items():
+            cleaning_log.log(
+                column = series.name,
+                change_type = "standardise_true",
+                detail = f'"{val}" → True',
+                count = int(count)
+            )
+        
+        for val, count in series[series.isin(FALSE_LIST)].value_counts().items():
+            cleaning_log.log(
+                column = series.name,
+                change_type = "standardise_false",
+                detail = f'"{val}" → False',
+                count = int(count)
+                )
 
     return result
 
@@ -231,7 +248,7 @@ def standardise_data(df: pd.DataFrame, column_types: dict, date_format: str = No
             df[col] = standardise_date(df[col], date_format, cleaning_log)
 
         elif col_type == "boolean":
-            df[col] = standardise_boolean(df[col])
+            df[col] = standardise_boolean(df[col], cleaning_log)
 
     return df
     
